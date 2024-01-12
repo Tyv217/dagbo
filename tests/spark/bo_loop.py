@@ -76,8 +76,8 @@ def get_eval_fun():
     Returns the function which evaluates Spark on a new configuration.
     This is a stub for the unit tests (which don't have Spark integration).
     """
-    # from random import random
-    # return lambda _: {k:(random(), float('nan')) for k in metric_keys}
+    from random import random
+    return lambda _: {k:(random(), float('nan')) for k in metric_keys}
 
     def eval_fun(parameterization): 
 
