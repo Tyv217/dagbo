@@ -11,6 +11,8 @@ from dagbo.ax_utils import AxDagModelConstructor, register_runners
 
 from spark_dag import SparkDag
 
+import subprocess, requests, pandas as pd
+
 """
 An integration test of the Spark DAG in a tuning loop
 1. Register Spark model with Ax
@@ -66,14 +68,110 @@ metric_keys = sorted([
     "throughput_from_first_job",
 ])
 
+SPARK_CONF_FILE_PATH = "/home/xty20/HiBench/conf/spark.conf"
+
 # EVALUATION FUNCTION
 def get_eval_fun():
     """
     Returns the function which evaluates Spark on a new configuration.
     This is a stub for the unit tests (which don't have Spark integration).
     """
-    from random import random
-    return lambda _: {k:(random(), float('nan')) for k in metric_keys}
+    # from random import random
+    # return lambda _: {k:(random(), float('nan')) for k in metric_keys}
+
+    def eval_fun(parameterization): 
+
+        spark_response = {k:(0) for k in metric_keys}
+
+        for key, value in parameterization:
+            with open(SPARK_CONF_FILE_PATH, "w+") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if key in line:
+                        line = key + " " + value
+                        break
+
+        # Run a command
+        result = subprocess.run(["run_spark_sql_aggregation.sh"], capture_output=True, text=True)
+
+        # Get the exit code
+        exit_code = result.returncode
+
+        if exit_code != 0:
+            return spark_response
+
+        try: 
+            application_response = requests.get("http://localhost:18080/api/v1/applications")
+        except:
+            raise Exception("Spark History Server is not running")
+        
+        application = application_response.json()
+
+        app_id = None
+        for app in application:
+            if app["name"] == "ScalaAggregation":
+                app_id = str(app["id"])
+                break
+        if app_id == None:
+            return spark_response
+            
+        app_basic_info = requests.get("http://localhost:18080/api/v1/applications" + app_id)
+        if not app_basic_info["attempts"][0]["completed"]:
+            return spark_response
+        
+        executor_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/executors")
+        if executor_info.len() < 2:
+            return spark_response
+
+        executors = len(executors) - 1
+        spark_response["executors"] = executors
+        spark_response["num_tasks_per_executor"] = num_tasks_per_executor = parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"]
+        spark_response["concurrent_tasks"] = num_tasks_per_executor * executors
+
+        stage_0_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/0")
+        stage_0 = stage_0_info.json()[0]
+
+        spark_response["disk_bytes_spilled_0"] = stage_0["diskBytesSpilled"]
+        spark_response["executor_cpu_time_0"] = stage_0["executorCpuTime"]
+        spark_response["executor_noncpu_time_0"] = stage_0["executorRunTime"] * 1000000 - stage_0["executorCpuTime"]
+        spark_response["duration_0"] = spark_response["executor_cpu_time_0"] + spark_response["executor_noncpu_time_0"]
+        jvm_gc_time_0 = 0
+        for task in stage_0["tasks"].keys():
+            jvm_gc_time_0 += stage_0["tasks"][task]["taskMetrics"]["jvmGcTime"]
+
+        spark_response["jvm_gc_time_0"] = jvm_gc_time_0
+
+        stage_1_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/1")
+        stage_1 = stage_1_info.json()[0]
+
+        spark_response["disk_bytes_spilled_2"] = stage_1["diskBytesSpilled"]
+        spark_response["executor_cpu_time_2"] = stage_1["executorCpuTime"]
+        spark_response["executor_noncpu_time_2"] = stage_1["executorRunTime"] * 1000000 - stage_1["executorCpuTime"]
+        spark_response["duration_2"] = spark_response["executor_cpu_time_2"] + spark_response["executor_noncpu_time_2"]
+        jvm_gc_time_2 = 0
+        for task in stage_0["tasks"].keys():
+            jvm_gc_time_2 += stage_0["tasks"][task]["taskMetrics"]["jvmGcTime"]
+
+        spark_response["jvm_gc_time_2"] = jvm_gc_time_2
+
+        file_path = '/home/xty20/HiBench/report/hibench.report'
+
+        # Read the file into a DataFrame
+        # The regex '\s+' matches one or more whitespace characters
+        df = pd.read_csv(file_path, delim_whitespace=True, header=None, engine='python')
+
+        throughput = None
+
+        for row in df.iterrows():
+            if row["Type"] == "ScalaSparkAggregation":
+                throughput = row["Throughput(bytes/s)"]
+                break
+
+        spark_response["throughput_from_first_job"] = throughput
+        
+        return spark_response
+    
+    return eval_fun
 
 # EXPERIMENT CONTROLLER
 simple_exp = SimpleExperiment(
