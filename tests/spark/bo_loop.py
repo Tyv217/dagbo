@@ -33,7 +33,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--resume', type=int, default=0)
 parser.add_argument('--experiment_load_file', type=str, default="spark_example_exp.json")
 parser.add_argument('--experiment_save_file', type=str, default="spark_example_exp.json")
-parser.add_argument('--model_type', type=str, default="spark_example_exp.json")
 parser.add_argument('--use_dag', action='store_true')
 args = parser.parse_args()
 
@@ -330,4 +329,4 @@ for _ in range(num_trials):
     data=simple_exp.eval()
 
     # saving results
-    save(simple_exp, experiment_save_file)
+    save(simple_exp, args.experiment_save_file)
