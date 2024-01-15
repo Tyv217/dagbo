@@ -125,10 +125,10 @@ def get_eval_fun():
             return spark_response
         
         executor_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/executors").json()
-        if executor_info.len() < 2:
+        if len(executor_info) < 2:
             return spark_response
 
-        executors = len(executors) - 1
+        executors = len(executor_info) - 1
         spark_response["executors"] = (executors, float('nan'))
         num_tasks_per_executor = parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"]
         spark_response["num_tasks_per_executor"] = (num_tasks_per_executor, float('nan'))
