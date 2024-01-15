@@ -124,35 +124,36 @@ def get_eval_fun():
             return spark_response
 
         executors = len(executors) - 1
-        spark_response["executors"] = executors
-        spark_response["num_tasks_per_executor"] = num_tasks_per_executor = parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"]
-        spark_response["concurrent_tasks"] = num_tasks_per_executor * executors
+        spark_response["executors"] = (executors, float('nan'))
+        num_tasks_per_executor = parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"]
+        spark_response["num_tasks_per_executor"] = (num_tasks_per_executor, float('nan'))
+        spark_response["concurrent_tasks"] = (num_tasks_per_executor * executors, float('nan'))
 
         stage_0_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/0")
         stage_0 = stage_0_info.json()[0]
 
-        spark_response["disk_bytes_spilled_0"] = stage_0["diskBytesSpilled"]
-        spark_response["executor_cpu_time_0"] = stage_0["executorCpuTime"]
-        spark_response["executor_noncpu_time_0"] = stage_0["executorRunTime"] * 1000000 - stage_0["executorCpuTime"]
-        spark_response["duration_0"] = spark_response["executor_cpu_time_0"] + spark_response["executor_noncpu_time_0"]
+        spark_response["disk_bytes_spilled_0"] = (stage_0["diskBytesSpilled"] , float('nan'))
+        spark_response["executor_cpu_time_0"] = (stage_0["executorCpuTime"] , float('nan'))
+        spark_response["executor_noncpu_time_0"] = (stage_0["executorRunTime"] * 1000000 - stage_0["executorCpuTime"], float('nan'))
+        spark_response["duration_0"] = (spark_response["executor_cpu_time_0"] + spark_response["executor_noncpu_time_0"] , float('nan'))
         jvm_gc_time_0 = 0
         for task in stage_0["tasks"].keys():
             jvm_gc_time_0 += stage_0["tasks"][task]["taskMetrics"]["jvmGcTime"]
 
-        spark_response["jvm_gc_time_0"] = jvm_gc_time_0
+        spark_response["jvm_gc_time_0"] = (jvm_gc_time_0 , float('nan'))
 
         stage_1_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/1")
         stage_1 = stage_1_info.json()[0]
 
-        spark_response["disk_bytes_spilled_2"] = stage_1["diskBytesSpilled"]
-        spark_response["executor_cpu_time_2"] = stage_1["executorCpuTime"]
-        spark_response["executor_noncpu_time_2"] = stage_1["executorRunTime"] * 1000000 - stage_1["executorCpuTime"]
-        spark_response["duration_2"] = spark_response["executor_cpu_time_2"] + spark_response["executor_noncpu_time_2"]
+        spark_response["disk_bytes_spilled_2"] = (stage_1["diskBytesSpilled"] , float('nan'))
+        spark_response["executor_cpu_time_2"] = (stage_1["executorCpuTime"] , float('nan'))
+        spark_response["executor_noncpu_time_2"] = (stage_1["executorRunTime"] * 1000000 - stage_1["executorCpuTime"], float('nan'))
+        spark_response["duration_2"] = (spark_response["executor_cpu_time_2"] + spark_response["executor_noncpu_time_2"] , float('nan'))
         jvm_gc_time_2 = 0
         for task in stage_0["tasks"].keys():
             jvm_gc_time_2 += stage_0["tasks"][task]["taskMetrics"]["jvmGcTime"]
 
-        spark_response["jvm_gc_time_2"] = jvm_gc_time_2
+        spark_response["jvm_gc_time_2"] = (jvm_gc_time_2 , float('nan'))
 
         file_path = '/home/xty20/HiBench/report/hibench.report'
 
@@ -167,7 +168,7 @@ def get_eval_fun():
                 throughput = row["Throughput(bytes/s)"]
                 break
 
-        spark_response["throughput_from_first_job"] = throughput
+        spark_response["throughput_from_first_job"] = (throughput , float('nan'))
         
         return spark_response
     
