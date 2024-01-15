@@ -133,7 +133,7 @@ def get_eval_fun():
 
         executors = len(executor_info) - 1
         spark_response["num_executors"] = (executors, float('nan'))
-        num_tasks_per_executor = parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"]
+        num_tasks_per_executor = int(parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"])
         spark_response["num_tasks_per_executor"] = (num_tasks_per_executor, float('nan'))
         spark_response["concurrent_tasks"] = (num_tasks_per_executor * executors, float('nan'))
 
@@ -143,7 +143,7 @@ def get_eval_fun():
         spark_response["disk_bytes_spilled_0"] = (stage_0["diskBytesSpilled"] , float('nan'))
         spark_response["executor_cpu_time_0"] = (stage_0["executorCpuTime"] , float('nan'))
         spark_response["executor_noncpu_time_0"] = (stage_0["executorRunTime"] * 1000000 - stage_0["executorCpuTime"], float('nan'))
-        spark_response["duration_0"] = (spark_response["executor_cpu_time_0"] + spark_response["executor_noncpu_time_0"] , float('nan'))
+        spark_response["duration_0"] = (spark_response["executor_cpu_time_0"][0] + spark_response["executor_noncpu_time_0"][0] , float('nan'))
         jvm_gc_time_0 = 0
         for task in stage_0["tasks"].keys():
             jvm_gc_time_0 += stage_0["tasks"][task]["taskMetrics"]["jvmGcTime"]
@@ -156,7 +156,7 @@ def get_eval_fun():
         spark_response["disk_bytes_spilled_2"] = (stage_1["diskBytesSpilled"] , float('nan'))
         spark_response["executor_cpu_time_2"] = (stage_1["executorCpuTime"] , float('nan'))
         spark_response["executor_noncpu_time_2"] = (stage_1["executorRunTime"] * 1000000 - stage_1["executorCpuTime"], float('nan'))
-        spark_response["duration_2"] = (spark_response["executor_cpu_time_2"] + spark_response["executor_noncpu_time_2"] , float('nan'))
+        spark_response["duration_2"] = (spark_response["executor_cpu_time_2"][0] + spark_response["executor_noncpu_time_2"][0] , float('nan'))
         jvm_gc_time_2 = 0
         for task in stage_0["tasks"].keys():
             jvm_gc_time_2 += stage_0["tasks"][task]["taskMetrics"]["jvmGcTime"]
