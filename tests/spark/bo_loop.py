@@ -97,7 +97,7 @@ def get_eval_fun():
             f.flush()
 
         # Run a command
-        result = subprocess.run(["run_spark_sql_aggregation.sh"], capture_output=True, text=True)
+        result = subprocess.run(["/home/xty20/dagbo/run_spark_sql_aggregation.sh"], capture_output=True, text=True)
 
         # Get the exit code
         exit_code = result.returncode
