@@ -6,7 +6,7 @@ from ax.modelbridge.factory import Models, get_botorch
 from ax.storage.runner_registry import register_runner
 from ax.utils.common.constants import Keys
 from ax import save
-from ax.storage.json_store.load import load_experiment
+from ax.storage.json_store.decoder import simple_experiment_from_json
 import argparse
 
 from dagbo.ax_utils import AxDagModelConstructor, register_runners
@@ -203,7 +203,7 @@ num_bootstrap = 2
 num_trials = 60 - num_bootstrap
 
 if args.resume != 0:
-    simple_exp=load_experiment(args.experiment_load_file)
+    simple_exp=simple_experiment_from_json(args.experiment_load_file)
     num_trials -= len(simple_exp.trials)
 else:
     # EXPERIMENT CONTROLLER
