@@ -6,6 +6,8 @@ from ax.modelbridge.factory import Models, get_botorch
 from ax.storage.runner_registry import register_runner
 from ax.utils.common.constants import Keys
 from ax import save
+from ax.storage.json_store.load import load_experiment
+import argparse
 
 from dagbo.ax_utils import AxDagModelConstructor, register_runners
 
@@ -190,17 +192,27 @@ def get_eval_fun():
     
     return eval_fun
 
-# EXPERIMENT CONTROLLER
-simple_exp = SimpleExperiment(
-    search_space=search_space,
-    objective_name="throughput_from_first_job",
-    name="spark_exp_example",
-    evaluation_function=get_eval_fun()
-)
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--resume', type=int, default=0)
+parser.add_argument('--experiment_load_file', type=str, default="spark_example_exp.json")
+args = parser.parse_args()
 
 num_bootstrap = 2
-num_trials = 4
+num_trials = 60 - num_bootstrap
 
+if args.resume != 0:
+    simple_exp=load_experiment(args.experiment_load_file)
+    num_trials -= len(simple_exp.trials)
+else:
+    # EXPERIMENT CONTROLLER
+    simple_exp = SimpleExperiment(
+        search_space=search_space,
+        objective_name="throughput_from_first_job",
+        name="spark_exp_example",
+        evaluation_function=get_eval_fun()
+    )
 # BOOTSTRAP EVALUATIONS
 sobol = Models.SOBOL(simple_exp.search_space)
 simple_exp.new_batch_trial(generator_run=sobol.gen(num_bootstrap))
