@@ -120,7 +120,7 @@ def get_eval_fun():
         if app_id == None:
             return spark_response
             
-        app_basic_info = requests.get("http://localhost:18080/api/v1/applications" + app_id).json()
+        app_basic_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id).json()
         if not app_basic_info["attempts"][0]["completed"]:
             return spark_response
         
