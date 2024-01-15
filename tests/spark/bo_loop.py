@@ -35,7 +35,7 @@ register_runner(DelayedSparkDagInit)
 
 # SEARCH SPACE
 executor_cores = RangeParameter("spark.executor.cores", ParameterType.INT, lower=1, upper=8)
-executor_memory = RangeParameter("spark.executor.memory", ParameterType.INT, lower=512, upper=14336)
+executor_memory = RangeParameter("spark.executor.memory", ParameterType.INT, lower=512, upper=8000)
 task_cpus = RangeParameter("spark.task.cpus", ParameterType.INT, lower=1, upper=8)
 memory_fraction = RangeParameter("spark.memory.fraction", ParameterType.FLOAT, lower=0.01, upper=0.99)
 shuffle_compress = ChoiceParameter("spark.shuffle.compress", ParameterType.BOOL, values=[False, True], is_ordered=True)
@@ -43,7 +43,7 @@ shuffle_spill_compress = ChoiceParameter("spark.shuffle.spill.compress", Paramet
 # order of parameters (configurable variables) is arbitrary be must be consistent throughout program
 parameters = [executor_cores, executor_memory, task_cpus, memory_fraction, shuffle_compress, shuffle_spill_compress]
 
-task_cpus_lt_executor_cores = ParameterConstraint(constraint_dict={"spark.task.cpus": 1., "spark.executor.cores": -1.}, bound=0.)
+task_cpus_lt_executor_cores = ParameterConstraint(constraint_dict={"spark.task.cpus": 1., "spark.executor.cores": -1.}, bound=-0.5)
 
 parameter_constraints = [task_cpus_lt_executor_cores]
 
