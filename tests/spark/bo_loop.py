@@ -5,7 +5,7 @@ from ax.core.parameter_constraint import ParameterConstraint
 from ax.modelbridge.factory import Models, get_botorch
 from ax.storage.runner_registry import register_runner
 from ax.utils.common.constants import Keys
-from ax import save
+from ax import save, load
 from ax.storage.json_store.decoder import simple_experiment_from_json
 import argparse
 import json
@@ -205,10 +205,28 @@ num_trials = 60 - num_bootstrap
 
 if args.resume != 0:
     
-    f = open(args.experiment_load_file)
-    data = json.load(f)
-    simple_exp=simple_experiment_from_json(data)
+    # f = open(args.experiment_load_file)
+    # data = json.load(f)
+    # simple_exp=simple_experiment_from_json(data)
     num_trials -= len(simple_exp.trials)
+        # Step 1: Load the existing experiment
+    experiment = load(args.experiment_load_file)
+
+    parameters = experiment.search_space.parameters
+    objective_name = experiment.optimization_config.objective.metric.name
+    simple_experiment = SimpleExperiment(
+        name="converted_simple_experiment",
+        parameters=list(parameters.values()),
+        evaluation_function=get_eval_fun(),
+        objective_name=objective_name
+    )
+    # Step 4: Transfer trials (if necessary)
+    for trial in experiment.trials.values():
+        trial_params = trial.arm.parameters
+        trial_result = trial.fetch_data().df['mean'].to_dict()
+        
+        new_trial = simple_experiment.new_trial().add_arm(trial.arm)
+        simple_experiment.complete_trial(trial_index=new_trial.index, raw_data=trial_result)
 else:
     # EXPERIMENT CONTROLLER
     simple_exp = SimpleExperiment(
