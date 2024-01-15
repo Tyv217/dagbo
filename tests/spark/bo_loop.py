@@ -87,11 +87,12 @@ def get_eval_fun():
             lines = f.readlines()
 
         for key in parameterization.keys():
+            to_check = key
             if (key == "spark.executor.cores"):
-                key = "hibench.yarn.executor.cores"
+                to_check = "hibench.yarn.executor.cores"
             for i in range(len(lines)):
-                if key in lines[i]:
-                    lines[i] = key + " " + str(parameterization[key]) + ("m" if key == "spark.executor.memory" else "") + "\n"
+                if to_check in lines[i]:
+                    lines[i] = to_check + " " + str(parameterization[key]) + ("m" if key == "spark.executor.memory" else "") + "\n"
                     break
 
         with open(SPARK_CONF_FILE_PATH, "w") as f:
