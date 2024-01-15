@@ -203,7 +203,10 @@ num_bootstrap = 2
 num_trials = 60 - num_bootstrap
 
 if args.resume != 0:
-    simple_exp=simple_experiment_from_json(args.experiment_load_file)
+    
+    f = open(args.experiment_load_file)
+    data = json.load(f)
+    simple_exp=simple_experiment_from_json(data)
     num_trials -= len(simple_exp.trials)
 else:
     # EXPERIMENT CONTROLLER
