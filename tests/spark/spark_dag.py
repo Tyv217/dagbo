@@ -39,3 +39,22 @@ class SparkDag(Dag, DagGPyTorchModel):
         d2 = self.register_metric("duration_2", [cpu2, ncpu2])
 
         self.register_metric("throughput_from_first_job", [d0, d2, sssc])
+
+class SparkGP(Dag, DagGPyTorchModel):
+    """BO GP model for the SQL/Aggregation HiBench Spark benchmark"""
+
+    def __init__(self, train_input_names: List[str], train_target_names: List[str], train_inputs: Tensor, train_targets: Tensor, num_samples: int):
+        super().__init__(train_input_names, train_target_names, train_inputs, train_targets)
+        # required for all classes that extend SparkDag
+        self.num_samples = num_samples
+
+    def define_dag(self, batch_shape: Size = Size([])) -> None:
+        sec = self.register_input("spark.executor.cores")
+        stc = self.register_input("spark.task.cpus")
+        sem = self.register_input("spark.executor.memory")
+        smf = self.register_input("spark.memory.fraction")
+        ssc = self.register_input("spark.shuffle.compress")
+        sssc = self.register_input("spark.shuffle.spill.compress")
+
+        self.register_metric("throughput_from_first_job", [sec, stc, sem, smf, ssc, sssc])
+

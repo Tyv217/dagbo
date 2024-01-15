@@ -12,7 +12,7 @@ import json
 
 from dagbo.ax_utils import AxDagModelConstructor, register_runners
 
-from spark_dag import SparkDag
+from spark_dag import SparkDag, SparkGP
 
 import subprocess, requests, pandas as pd
 
@@ -29,11 +29,20 @@ An integration test of the Spark DAG in a tuning loop
   d. Save the result and repeat
 """
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--resume', type=int, default=0)
+parser.add_argument('--experiment_load_file', type=str, default="spark_example_exp.json")
+parser.add_argument('--experiment_save_file', type=str, default="spark_example_exp.json")
+parser.add_argument('--model_type', type=str, default="spark_example_exp.json")
+parser.add_argument('--use_dag', action='store_true')
+args = parser.parse_args()
+
 # MODEL REGISTRY (for saving results)
 register_runners()
 class DelayedSparkDagInit:
     def __call__(self, train_input_names, train_target_names, train_inputs, train_targets, num_samples):
-        return SparkDag(train_input_names, train_target_names, train_inputs, train_targets, num_samples)
+        model = SparkDag if args.use_dag else SparkBO
+        return model(train_input_names, train_target_names, train_inputs, train_targets, num_samples)
 register_runner(DelayedSparkDagInit)
 
 # SEARCH SPACE
@@ -74,10 +83,9 @@ metric_keys = sorted([
 SPARK_CONF_FILE_PATH = "/home/xty20/HiBench/conf/spark.conf"
 
 # EVALUATION FUNCTION
-def get_eval_fun():
+def get_eval_fun_dag():
     """
     Returns the function which evaluates Spark on a new configuration.
-    This is a stub for the unit tests (which don't have Spark integration).
     """
     # from random import random
     # return lambda _: {k:(random(), float('nan')) for k in metric_keys}
@@ -193,19 +201,88 @@ def get_eval_fun():
     
     return eval_fun
 
+def get_eval_fun_bo():
+    """
+    Returns the function which evaluates Spark on a new configuration.
+    """
+    
+    def eval_fun(parameterization): 
 
+        spark_response = {k:((0, float('nan'))) for k in metric_keys}
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--resume', type=int, default=0)
-parser.add_argument('--experiment_load_file', type=str, default="spark_example_exp.json")
-args = parser.parse_args()
+        with open(SPARK_CONF_FILE_PATH, "r") as f:
+            lines = f.readlines()
+
+        for key in parameterization.keys():
+            to_check = key
+            if (key == "spark.executor.cores"):
+                to_check = "hibench.yarn.executor.cores"
+            for i in range(len(lines)):
+                if to_check in lines[i]:
+                    lines[i] = to_check + " " + str(parameterization[key]) + ("m" if key == "spark.executor.memory" else "") + "\n"
+                    break
+
+        with open(SPARK_CONF_FILE_PATH, "w") as f:
+            f.writelines(lines)
+            f.flush()
+
+        # Run a command
+        result = subprocess.run(["/home/xty20/dagbo/run_spark_sql_aggregation.sh"], capture_output=True, text=True)
+
+        # Get the exit code
+        exit_code = result.returncode
+
+        if exit_code != 0:
+            return spark_response
+
+        try: 
+            application_response = requests.get("http://localhost:18080/api/v1/applications")
+        except:
+            raise Exception("Spark History Server is not running")
+        
+        application = application_response.json()
+
+        app_id = None
+        for app in application:
+            if app["name"] == "ScalaAggregation":
+                app_id = str(app["id"])
+                break
+        if app_id == None:
+            return spark_response
+            
+        app_basic_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id).json()
+        if not app_basic_info["attempts"][0]["completed"]:
+            return spark_response
+
+        file_path = '/home/xty20/HiBench/report/hibench.report'
+
+        # Read the file into a DataFrame
+        # The regex '\s+' matches one or more whitespace characters
+        df = pd.read_csv(file_path, delim_whitespace=True, header=None, engine='python')
+
+        throughput = None
+
+        for _, row in df.iterrows():
+            if row[0] == "ScalaSparkAggregation":
+                throughput = row[5]
+                break
+
+        spark_response["throughput_from_first_job"] = (throughput , float('nan'))
+        
+        return spark_response
+    
+    return eval_fun
+
+if args.use_dag:
+    get_eval_fun = get_eval_fun_dag
+else:
+    get_eval_fun = get_eval_fun_bo
+    metric_keys = ["throughput_from_first_job"]
 
 num_bootstrap = 2
 num_trials = 60 - num_bootstrap
 
-
 if args.resume != 0:
-    
     f = open(args.experiment_load_file)
     data = json.load(f)
     simple_exp=object_from_json(data)
@@ -253,4 +330,4 @@ for _ in range(num_trials):
     data=simple_exp.eval()
 
     # saving results
-    save(simple_exp, "spark_example_exp.json")
+    save(simple_exp, experiment_save_file)
