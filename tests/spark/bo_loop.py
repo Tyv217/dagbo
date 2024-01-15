@@ -81,7 +81,7 @@ def get_eval_fun():
 
     def eval_fun(parameterization): 
 
-        spark_response = {k:(0) for k in metric_keys}
+        spark_response = {k:((0, float('nan'))) for k in metric_keys}
 
         with open(SPARK_CONF_FILE_PATH, "r") as f:
             lines = f.readlines()
