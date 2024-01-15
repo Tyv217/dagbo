@@ -132,7 +132,7 @@ def get_eval_fun():
             return spark_response
 
         executors = len(executor_info) - 1
-        spark_response["executors"] = (executors, float('nan'))
+        spark_response["num_executors"] = (executors, float('nan'))
         num_tasks_per_executor = parameterization["spark.executor.cores"] / parameterization["spark.task.cpus"]
         spark_response["num_tasks_per_executor"] = (num_tasks_per_executor, float('nan'))
         spark_response["concurrent_tasks"] = (num_tasks_per_executor * executors, float('nan'))
