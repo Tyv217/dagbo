@@ -140,6 +140,10 @@ def get_eval_fun():
         stage_0_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/0")
         stage_0 = stage_0_info.json()[0]
 
+        if(stage_0["status"] != "COMPLETE"):
+            import pdb
+            pdb.set_trace()
+
         spark_response["disk_bytes_spilled_0"] = (stage_0["diskBytesSpilled"] , float('nan'))
         spark_response["executor_cpu_time_0"] = (stage_0["executorCpuTime"] , float('nan'))
         spark_response["executor_noncpu_time_0"] = (stage_0["executorRunTime"] * 1000000 - stage_0["executorCpuTime"], float('nan'))
@@ -152,6 +156,10 @@ def get_eval_fun():
 
         stage_1_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/1")
         stage_1 = stage_1_info.json()[0]
+
+        if(stage_1["status"] != "COMPLETE"):
+            import pdb
+            pdb.set_trace()
 
         spark_response["disk_bytes_spilled_2"] = (stage_1["diskBytesSpilled"] , float('nan'))
         spark_response["executor_cpu_time_2"] = (stage_1["executorCpuTime"] , float('nan'))
