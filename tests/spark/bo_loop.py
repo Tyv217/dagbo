@@ -209,7 +209,7 @@ if args.resume != 0:
     f = open(args.experiment_load_file)
     data = json.load(f)
     simple_exp=object_from_json(data)
-
+    simple_exp._evaluation_function = get_eval_fun()
     num_trials -= len(simple_exp.trials)
 else:
     # EXPERIMENT CONTROLLER
