@@ -35,7 +35,7 @@ register_runner(DelayedSparkDagInit)
 
 # SEARCH SPACE
 executor_cores = RangeParameter("spark.executor.cores", ParameterType.INT, lower=1, upper=8)
-executor_memory = RangeParameter("spark.executor.memory", ParameterType.INT, lower=512, upper=8000)
+executor_memory = RangeParameter("spark.executor.memory", ParameterType.INT, lower=512, upper=7500)
 task_cpus = RangeParameter("spark.task.cpus", ParameterType.INT, lower=1, upper=8)
 memory_fraction = RangeParameter("spark.memory.fraction", ParameterType.FLOAT, lower=0.01, upper=0.99)
 shuffle_compress = ChoiceParameter("spark.shuffle.compress", ParameterType.BOOL, values=[False, True], is_ordered=True)
@@ -87,6 +87,8 @@ def get_eval_fun():
             lines = f.readlines()
 
         for key in parameterization.keys():
+            if (key == "spark.executor.cores"):
+                key = "hibench.yarn.executor.cores"
             for i in range(len(lines)):
                 if key in lines[i]:
                     lines[i] = key + " " + str(parameterization[key]) + ("m" if key == "spark.executor.memory" else "") + "\n"
