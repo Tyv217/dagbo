@@ -168,9 +168,9 @@ def get_eval_fun():
 
         throughput = None
 
-        for row in df.iterrows():
-            if row["Type"] == "ScalaSparkAggregation":
-                throughput = row["Throughput(bytes/s)"]
+        for _, row in df.iterrows():
+            if row[0] == "ScalaSparkAggregation":
+                throughput = row[5]
                 break
 
         spark_response["throughput_from_first_job"] = (throughput , float('nan'))
