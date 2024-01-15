@@ -116,7 +116,7 @@ def get_eval_fun_dag():
         exit_code = result.returncode
 
         if exit_code != 0:
-            return spark_response
+            raise Exception("App did not run successfully!")
 
         try: 
             application_response = requests.get("http://localhost:18080/api/v1/applications")
