@@ -83,13 +83,18 @@ def get_eval_fun():
 
         spark_response = {k:(0) for k in metric_keys}
 
-        for key, value in parameterization:
-            with open(SPARK_CONF_FILE_PATH, "w+") as f:
-                lines = f.readlines()
-                for line in lines:
-                    if key in line:
-                        line = key + " " + value
-                        break
+        with open(SPARK_CONF_FILE_PATH, "r") as f:
+            lines = f.readlines()
+
+        for key in parameterization.keys():
+            for i in range(len(lines)):
+                if key in lines[i]:
+                    lines[i] = key + " " + str(parameterization[key]) + ("m" if key == "spark.executor.memory" else "") + "\n"
+                    break
+
+        with open(SPARK_CONF_FILE_PATH, "w") as f:
+            f.writelines(lines)
+            f.flush()
 
         # Run a command
         result = subprocess.run(["run_spark_sql_aggregation.sh"], capture_output=True, text=True)
