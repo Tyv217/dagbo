@@ -136,7 +136,7 @@ def get_eval_fun_dag():
             
         app_basic_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id).json()
         if not app_basic_info["attempts"][0]["completed"]:
-            return spark_response
+            raise Exception("Spark run not completed!")
         
         executor_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/executors").json()
         if len(executor_info) < 2:
