@@ -5,6 +5,8 @@ from ray import tune
 from ray.tune.search.ax import AxSearch
 from ray.tune.search.hyperopt import HyperOptSearch
 from ray.tune import Callback
+import subprocess, requests, pandas as pd
+
 """
 An integration test of the Spark DAG in a tuning loop
 1. Register Spark model with Ax
