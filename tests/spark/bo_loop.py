@@ -289,8 +289,6 @@ def get_eval_fun_bo():
         return spark_response
     
     return eval_fun
-    
-    return eval_fun
 
 if args.use_dag:
     get_eval_fun = get_eval_fun_dag
