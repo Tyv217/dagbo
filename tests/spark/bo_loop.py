@@ -300,7 +300,7 @@ else:
     metric_keys = ["throughput_from_first_job"]
 
 num_bootstrap = 2
-num_trials = 60 - num_bootstrap
+num_trials = 50 - num_bootstrap
 
 if args.resume != 0:
     f = open(args.experiment_load_file)

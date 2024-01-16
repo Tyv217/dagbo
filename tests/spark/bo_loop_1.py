@@ -108,6 +108,7 @@ def eval_fun(parameterization):
     # Read the file into a DataFrame
     # The regex '\s+' matches one or more whitespace characters
     df = pd.read_csv(file_path, delim_whitespace=True, header=None, engine='python')
+    df = df[::-1]
 
     throughput = None
 
