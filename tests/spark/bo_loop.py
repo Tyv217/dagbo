@@ -195,6 +195,8 @@ def get_eval_fun_dag():
                 throughput = row[5]
                 break
 
+        print(throughput)
+
         spark_response["throughput_from_first_job"] = (throughput , float('nan'))
         
         return spark_response
