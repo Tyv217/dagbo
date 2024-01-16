@@ -2,7 +2,8 @@ import argparse
 import json
 import ray
 from ray import tune
-from ray.tune.suggest.ax import AxSearch, HyperOptSearch
+from ray.tune.search.ax import AxSearch
+from ray.tune.search.hyperopt import HyperOptSearch
 from ray.tune import Callback
 """
 An integration test of the Spark DAG in a tuning loop
