@@ -116,6 +116,8 @@ def eval_fun(parameterization):
             throughput = row[5]
             break
 
+    train.report(metrics={"throughput"： throughput}, checkpoint=Checkpoint.from_directory(tempdir))
+
     return throughput
 
 class JsonLoggerCallback(Callback):
