@@ -114,9 +114,7 @@ def eval_fun(parameterization):
             throughput = row[5]
             break
 
-    spark_response["throughput_from_first_job"] = (throughput , float('nan'))
-    
-    return spark_response
+    return throughput
 
 class JsonLoggerCallback(Callback):
     def __init__(self, filename):
@@ -145,7 +143,7 @@ analysis = tune.run(
     eval_fun,
     config=search_space,
     num_samples=60,
-    search_alg=AxSearch() if args.use_bo else HyperOptSearch(),
+    search_alg=AxSearch(mode = "max") if args.use_bo else HyperOptSearch(mode = "max"),
     callbacks=[JsonLoggerCallback("tuning_results.json")]
 )
 
