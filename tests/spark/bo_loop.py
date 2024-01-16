@@ -40,7 +40,7 @@ args = parser.parse_args()
 register_runners()
 class DelayedSparkDagInit:
     def __call__(self, train_input_names, train_target_names, train_inputs, train_targets, num_samples):
-        model = SparkDag if args.use_dag else SparkBO
+        model = SparkDag if args.use_dag else SparkGP
         return model(train_input_names, train_target_names, train_inputs, train_targets, num_samples)
 register_runner(DelayedSparkDagInit)
 
@@ -232,7 +232,7 @@ def get_eval_fun_bo():
         exit_code = result.returncode
 
         if exit_code != 0:
-            return spark_response
+            raise Exception("App did not run successfully!")
 
         try: 
             application_response = requests.get("http://localhost:18080/api/v1/applications")
@@ -247,11 +247,29 @@ def get_eval_fun_bo():
                 app_id = str(app["id"])
                 break
         if app_id == None:
-            return spark_response
+            raise Exception("Invalid App ID!")
             
         app_basic_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id).json()
         if not app_basic_info["attempts"][0]["completed"]:
-            return spark_response
+            raise Exception("Spark run not completed!")
+        
+        executor_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/executors").json()
+        if len(executor_info) < 2:
+            raise Exception("Invalid executors!")
+
+        stage_0_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/0")
+        stage_0 = stage_0_info.json()[0]
+
+        if(stage_0["status"] != "COMPLETE"):
+            import pdb
+            pdb.set_trace()
+
+        stage_1_info = requests.get("http://localhost:18080/api/v1/applications/" + app_id + "/stages/1")
+        stage_1 = stage_1_info.json()[0]
+
+        if(stage_1["status"] != "COMPLETE"):
+            import pdb
+            pdb.set_trace()
 
         file_path = '/home/xty20/HiBench/report/hibench.report'
 
@@ -269,6 +287,8 @@ def get_eval_fun_bo():
         spark_response["throughput_from_first_job"] = (throughput , float('nan'))
         
         return spark_response
+    
+    return eval_fun
     
     return eval_fun
 
