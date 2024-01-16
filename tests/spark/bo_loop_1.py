@@ -24,7 +24,7 @@ args = parser.parse_args()
 # Define the search space
 search_space = {
     "spark.executor.cores": tune.sample_from(lambda config: 
-                                tune.uniform(config['spark.task.cpus'], 8))
+                                tune.uniform(config['spark.task.cpus'], 8)),
     "spark.executor.memory": tune.randint(512, 7500),
     "spark.task.cpus": tune.randint(1, 8),
     "spark.memory.fraction": tune.randint(512, 7500),
